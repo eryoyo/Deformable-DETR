@@ -83,14 +83,14 @@ class BackboneBase(nn.Module):
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     def forward(self, tensor_list: NestedTensor):
-        xs = self.body(tensor_list.tensors)
+        xs = self.body(tensor_list.tensors)     # [torch.Size([2, 3, 608, 810])] -> [['0', torch.Size([2, 512, 76, 102])], ['1', torch.Size([2, 1024, 38, 51])], ['2', torch.Size([2, 2048, 19, 26])]]
         out: Dict[str, NestedTensor] = {}
         for name, x in xs.items():
             m = tensor_list.mask
             assert m is not None
             mask = F.interpolate(m[None].float(), size=x.shape[-2:]).to(torch.bool)[0]
-            out[name] = NestedTensor(x, mask)
-        return out
+            out[name] = NestedTensor(x, mask)   # mask.shape, tensors.shape
+        return out  # [['0', torch.Size([2, 76, 102]), torch.Size([2, 512, 76, 102])], ['1', torch.Size([2, 38, 51]), torch.Size([2, 1024, 38, 51])], ['2', torch.Size([2, 19, 26]), torch.Size([2, 2048, 19, 26])]]
 
 
 class Backbone(BackboneBase):
@@ -126,7 +126,7 @@ class Joiner(nn.Sequential):
         for x in out:
             pos.append(self[1](x).to(x.tensors.dtype))
 
-        return out, pos
+        return out, pos # [torch.Size([2, 512, 76, 102]), torch.Size([2, 1024, 38, 51]), torch.Size([2, 2048, 19, 26])] [torch.Size([2, 256, 76, 102]), torch.Size([2, 256, 38, 51]), torch.Size([2, 256, 19, 26])]
 
 
 def build_backbone(args):
