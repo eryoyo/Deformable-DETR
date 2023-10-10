@@ -1,0 +1,1 @@
+GPUS_PER_NODE=7 ./tools/run_dist_launch.sh 7 ./configs/r50_deformable_detr.sh
