@@ -128,7 +128,7 @@ class DeformableDETR(nn.Module):
         """
         if not isinstance(samples, NestedTensor):
             samples = nested_tensor_from_tensor_list(samples)
-        features, pos = self.backbone(samples)
+        features, pos = self.backbone(samples)  # [torch.Size([2, 512, 76, 102]), torch.Size([2, 1024, 38, 51]), torch.Size([2, 2048, 19, 26])] [torch.Size([2, 256, 76, 102]), torch.Size([2, 256, 38, 51]), torch.Size([2, 256, 19, 26])]
 
         srcs = []
         masks = []
@@ -147,18 +147,18 @@ class DeformableDETR(nn.Module):
                 m = samples.mask
                 mask = F.interpolate(m[None].float(), size=src.shape[-2:]).to(torch.bool)[0]
                 pos_l = self.backbone[1](NestedTensor(src, mask)).to(src.dtype)
-                srcs.append(src)
-                masks.append(mask)
-                pos.append(pos_l)
+                srcs.append(src)        # [torch.Size([2, 256, 92, 123]), torch.Size([2, 256, 46, 62]), torch.Size([2, 256, 23, 31]), torch.Size([2, 256, 12, 16])]
+                masks.append(mask)      # [torch.Size([2, 92, 123]), torch.Size([2, 46, 62]), torch.Size([2, 23, 31]), torch.Size([2, 12, 16])]
+                pos.append(pos_l)       # [torch.Size([2, 256, 92, 123]), torch.Size([2, 256, 46, 62]), torch.Size([2, 256, 23, 31]), torch.Size([2, 256, 12, 16])]
 
         query_embeds = None
         if not self.two_stage:
-            query_embeds = self.query_embed.weight
+            query_embeds = self.query_embed.weight  # torch.Size([300, 512])
         hs, init_reference, inter_references, enc_outputs_class, enc_outputs_coord_unact = self.transformer(srcs, masks, pos, query_embeds)
 
         outputs_classes = []
         outputs_coords = []
-        for lvl in range(hs.shape[0]):
+        for lvl in range(hs.shape[0]):  # torch.Size([6, 2, 300, 256])
             if lvl == 0:
                 reference = init_reference
             else:
